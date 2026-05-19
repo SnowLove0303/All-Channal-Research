@@ -1,0 +1,16 @@
+# Local runtime state and generated secrets
+bilibili-all-in-one-2026-04-18-v2/.runtime/
+bilibili-all-in-one-2026-04-18-v2/.env.generated.ps1
+.env
+.env.*
+
+# Python/runtime caches
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Local logs and OS metadata
+*.log
+.DS_Store
+Thumbs.db
