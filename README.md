@@ -4,6 +4,8 @@ This private repo packages the current local Codex Bilibili skill as a ready-to-
 
 It includes the skill instructions, Bilibili search/download/transcription scripts, Chrome login-state helpers, Juya daily workflow scripts, hot-video report tools, smoke checks, and install scripts.
 
+Branch note: `zhihu-search-info-skill` also packages the Zhihu search/information retrieval skill in `zhihu-search-info/`.
+
 ## What Is Included
 
 - `bilibili-all-in-one-2026-04-18-v2/SKILL.md`: Codex skill entry.
