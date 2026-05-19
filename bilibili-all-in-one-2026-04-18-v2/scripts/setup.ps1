@@ -56,8 +56,13 @@ if (-not $SkipPythonDeps) {
         python -m venv $VenvDir
     }
     $PythonExe = Join-Path $VenvDir "Scripts\python.exe"
+    $RequirementsFile = Join-Path $SkillRoot "requirements.txt"
     & $PythonExe -m pip install --upgrade pip
-    & $PythonExe -m pip install yt-dlp imageio-ffmpeg faster-whisper
+    if (Test-Path $RequirementsFile) {
+        & $PythonExe -m pip install -r $RequirementsFile
+    } else {
+        & $PythonExe -m pip install yt-dlp imageio-ffmpeg faster-whisper requests
+    }
 }
 
 if (-not $SkipOpencli) {

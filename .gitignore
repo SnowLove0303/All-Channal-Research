@@ -3,6 +3,8 @@ bilibili-all-in-one-2026-04-18-v2/.runtime/
 bilibili-all-in-one-2026-04-18-v2/.env.generated.ps1
 .env
 .env.*
+*.env.ps1
+*.local.ps1
 
 # Python/runtime caches
 __pycache__/
