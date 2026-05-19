@@ -21,6 +21,8 @@ if (-not $OpencliCmd) {
 $checks = [ordered]@{
     SkillRoot = (Test-Path $SkillRoot)
     Python = [bool](Get-Command python -ErrorAction SilentlyContinue)
+    Node = [bool](Get-Command node -ErrorAction SilentlyContinue)
+    Npm = [bool](Get-Command npm -ErrorAction SilentlyContinue)
     VenvPython = (Test-Path $VenvPython)
     OpenCLI = ($OpencliCmd -and (Test-Path $OpencliCmd))
     FFmpeg = [bool](Get-Command ffmpeg -ErrorAction SilentlyContinue)
@@ -55,4 +57,8 @@ for name in ["yt_dlp", "imageio_ffmpeg", "faster_whisper"]:
 
 if ($OpencliCmd -and (Test-Path $OpencliCmd)) {
     & $OpencliCmd --version
+}
+
+if (Get-Command node -ErrorAction SilentlyContinue) {
+    & node -e "console.log('[Info] node:fetch=' + (typeof fetch === 'function'))"
 }

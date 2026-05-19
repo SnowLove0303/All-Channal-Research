@@ -607,6 +607,45 @@ python $Expander mcp-stdio
 | `scripts/bilibili-expander/cli.py` | 证据包/弹幕/雷达/订阅/直播监听/转录修复 | `python cli.py <command>` |
 | `scripts/bilibili-expander/chrome_cookie.py` | Chrome登录态/Cookie桥接 | `python cli.py chrome-login` |
 | `scripts/bilibili-expander/chrome_login.ps1` | Windows扫码登录包装脚本 | `.\scripts\bilibili-expander\chrome_login.ps1` |
+| `scripts/notion/publish-note-to-notion.mjs` | Markdown笔记/转录稿写入Notion | `node publish-note-to-notion.mjs --title ... --transcript ...` |
+
+---
+
+## 转录与Notion写入
+
+已知 BV 号时，优先用 `scripts/bilibili-opencli/scripts/run.py` 完成下载、转录和本地 Markdown 笔记生成：
+
+```powershell
+python scripts\bilibili-opencli\scripts\run.py `
+  --bvid BVxxxxxxxxxx `
+  --engine auto `
+  --keep-cache
+```
+
+关键约定：
+
+- `--engine auto` 会优先走 Whisper，并在配置 FunASR 时保留兜底空间。
+- 需要后续写 Notion 时必须加 `--keep-cache`，否则转录缓存可能被清理。
+- 转录稿默认落在输出目录的 `BVxxxxxxxxxx_transcript.txt`。
+- 本地日报笔记由 `formatter.py` 写入 vault/notes 目录。
+
+写入 Notion 有两个入口：
+
+1. 橘鸦 Juya 日报全链路：`scripts/juya-daily/run-juya-today-fullflow.ps1`，内部会调用 `publish-juya-fullflow-result-to-notion.mjs`。
+2. 通用笔记发布：`scripts/notion/publish-note-to-notion.mjs`，适合把任意已生成的 Markdown 笔记和 transcript 写进 Notion 数据库。
+
+Notion 凭证读取顺序：
+
+- `NOTION_TOKEN`
+- `NOTION_KEY`
+- `NOTION_API_KEY`
+
+目标数据库读取顺序：
+
+- `BILIBILI_DAILY_NOTION_DATABASE_ID`
+- `NOTION_DATABASE_ID`
+
+验收时必须确认 Notion 返回成功、页面链接可打开、转录稿不是空文件/错误页，并在最终结果里给出 Notion 页面链接和本地 transcript/note 路径。
 
 ---
 

@@ -11,8 +11,10 @@ It includes the skill instructions, Bilibili search/download/transcription scrip
 - `scripts/bilibili-opencli`: Bilibili search, metadata lookup, video/audio download, ASR transcription, and note generation.
 - `scripts/bilibili-expander`: Chrome login-state reuse, cookie bridge, evidence pack, danmaku/subtitle export, content radar, subscriptions, live snapshot, and download backend checks.
 - `scripts/juya-daily`: Juya AI daily lookup, transcription flow, Notion publishing flow.
+- `scripts/notion`: generic markdown/transcript to Notion publisher.
 - `scripts/bilibili-hot-monitor`: hot video report and email report workflow.
 - `scripts/setup.ps1`, `scripts/check_env.ps1`, `scripts/smoke_test.ps1`: install, environment check, and smoke validation.
+- `TRANSCRIBE_AND_NOTION.md`: operator and agent runbook for transcription and Notion publishing.
 
 Local login state, generated environment files, caches, and secrets are intentionally not committed.
 
@@ -102,6 +104,8 @@ Process a known BV:
 & $Py $Run --bvid BVxxxxxxxxxx --engine auto --keep-cache
 ```
 
+`--keep-cache` is important when the transcript needs to be published to Notion after transcription. See `TRANSCRIBE_AND_NOTION.md` for the full BV-to-Notion workflow.
+
 Search by keyword:
 
 ```powershell
@@ -126,6 +130,16 @@ Set the target database when needed:
 $env:BILIBILI_DAILY_NOTION_DATABASE_ID = "34d003b6-8bec-8027-a6ea-fd8b918c72c5"
 ```
 
+Publish any generated markdown note and transcript to Notion:
+
+```powershell
+node "$Skill\scripts\notion\publish-note-to-notion.mjs" `
+  --title "Juya AI 2026-05-19 BVxxxxxxxxxx" `
+  --bvid BVxxxxxxxxxx `
+  --note ".\.runtime\notes\Juya AI 2026-05-19 BVxxxxxxxxxx.md" `
+  --transcript "E:\MorenAnzhuangLujing\Huangjingdajian\downloads\bilibili\BVxxxxxxxxxx_transcript.txt"
+```
+
 ## Fresh Clone Checklist
 
 1. Clone this private repo.
@@ -145,4 +159,3 @@ $env:BILIBILI_DAILY_NOTION_DATABASE_ID = "34d003b6-8bec-8027-a6ea-fd8b918c72c5"
 - model caches
 - downloaded videos/audio
 - generated reports
-
