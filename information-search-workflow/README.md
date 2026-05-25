@@ -61,6 +61,14 @@ node .\information-search-workflow\scripts\collect_sources.mjs `
 
 If `--zhihu-cdp-url` is omitted, the Zhihu wrapper probes the current ChromeDidy environment and common local CDP ports. A stale `CHROME_DIDY_CDP_URL` no longer has to block a run when another logged-in ChromeDidy port is reachable.
 
+Before diagnosing Zhihu as "not logged in", collect port evidence:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\zhihu-search-info\scripts\discover_cdp_ports.ps1
+```
+
+Use `CHROME_DIDY_CDP_URL` first, then `CHROME_DIDY_CHROME_PORT`, then the common ports `9222`, `9223`, `9224`, `9225`, and `9333`. A `zhihu.com` tab in `/json/list` means the port is a candidate, but the workflow still verifies it by running `zhihu_cdp.ps1`; logged-out walls are blockers, not empty search results. Bilibili login state must be checked separately with `bilibili-expander` `cookie-status` / `cookie-from-chrome`.
+
 ## Outputs
 
 Each run writes:
@@ -75,6 +83,7 @@ Each run writes:
 
 - Start Bilibili with public search first; escalate to login/cookie-backed download only when a video must be transcribed.
 - Start Zhihu with `-Mode observe` if the user already has the relevant page open; use search only when query discovery is needed.
+- Do not pass `--zhihu-cdp-url` unless you intentionally want to pin one port; leaving it empty lets the Zhihu wrapper fall through to another reachable logged-in profile when the environment port is stale or logged out.
 - Keep generated evidence under `.runtime/`; the folder is intentionally ignored by Git.
 - A failed platform should be recorded as `error`, not silently omitted.
 - A successful run with no items is different from a blocked collector and should be reviewed separately.

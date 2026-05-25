@@ -121,7 +121,20 @@ powershell -ExecutionPolicy Bypass -File .\zhihu-search-info\scripts\zhihu_cdp.p
   -OutMarkdown .\.runtime\zhihu\search.md
 ```
 
-`zhihu_cdp.ps1` auto-discovers CDP in this order: explicit `-CdpUrl`, `CHROME_DIDY_CDP_URL`, `CHROME_DIDY_CHROME_PORT`, local Codex Chrome config, then common local debug ports `9223`, `9222`, `9224`, and `9333`.
+When login state is uncertain, inspect the current browser ports first:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\zhihu-search-info\scripts\discover_cdp_ports.ps1
+```
+
+`zhihu_cdp.ps1` auto-discovers CDP in this order: explicit `-CdpUrl`, `CHROME_DIDY_CDP_URL`, `CHROME_DIDY_CHROME_PORT`, local Codex Chrome config, then common local debug ports `9222`, `9223`, `9224`, `9225`, and `9333`. If no explicit `-CdpUrl` is provided and the first reachable port shows a logged-out Zhihu page, the wrapper tries the next reachable port instead of treating that as an empty result.
+
+Bilibili login state is not inferred from Zhihu tabs. Confirm it with the Bilibili expander:
+
+```powershell
+& $Py "$Skill\scripts\bilibili-expander\cli.py" cookie-status --no-validate
+& $Py "$Skill\scripts\bilibili-expander\cli.py" cookie-from-chrome --cdp-url http://127.0.0.1:9223 --wait-login 5
+```
 
 Find a specific video without downloading:
 

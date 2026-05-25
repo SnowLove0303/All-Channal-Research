@@ -20,7 +20,7 @@ function parseArgs(argv) {
     query: "",
     outDir: "",
     bilibiliPython: process.env.BILIBILI_PYTHON || "python",
-    zhihuCdpUrl: process.env.CHROME_DIDY_CDP_URL || "",
+    zhihuCdpUrl: "",
   };
 
   for (let index = 2; index < argv.length; index += 1) {
@@ -34,7 +34,9 @@ function parseArgs(argv) {
     else if (arg === "--bilibili-timeout-ms") args.bilibiliTimeoutMs = Number(next());
     else if (arg === "--zhihu-timeout-ms") args.zhihuTimeoutMs = Number(next());
     else if (arg === "--bilibili-python") args.bilibiliPython = next();
-    else if (arg === "--zhihu-cdp-url") args.zhihuCdpUrl = next();
+    else if (arg === "--zhihu-cdp-url") {
+      args.zhihuCdpUrl = next();
+    }
     else if (arg === "--help" || arg === "-h") args.help = true;
     else throw new Error(`Unknown argument: ${arg}`);
   }

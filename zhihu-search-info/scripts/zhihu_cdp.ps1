@@ -56,7 +56,7 @@ function Resolve-CdpUrl {
     }
   }
 
-  foreach ($port in @(9223, 9222, 9224, 9333)) {
+  foreach ($port in @(9222, 9223, 9224, 9225, 9333)) {
     Add-CdpCandidate $candidates "http://127.0.0.1:$port"
   }
 
@@ -73,7 +73,50 @@ function Resolve-CdpUrl {
   return "http://127.0.0.1:9223"
 }
 
-$ResolvedCdpUrl = Resolve-CdpUrl -Preferred $CdpUrl
+function Resolve-CdpCandidates {
+  param([string]$Preferred)
+
+  $candidates = [System.Collections.Generic.List[string]]::new()
+  Add-CdpCandidate $candidates $Preferred
+  Add-CdpCandidate $candidates $env:CHROME_DIDY_CDP_URL
+  Add-CdpCandidate $candidates ([Environment]::GetEnvironmentVariable("CHROME_DIDY_CDP_URL", "User"))
+  Add-CdpCandidate $candidates $env:CHROME_DIDY_CHROME_PORT
+  Add-CdpCandidate $candidates ([Environment]::GetEnvironmentVariable("CHROME_DIDY_CHROME_PORT", "User"))
+
+  $configPath = "F:\AIAPP\Codex\Codex1\data\config.json"
+  if (Test-Path $configPath) {
+    try {
+      $config = Get-Content -Raw -LiteralPath $configPath | ConvertFrom-Json
+      Add-CdpCandidate $candidates $config.cdp_url
+      Add-CdpCandidate $candidates $config.cdpUrl
+    } catch {
+      # Ignore malformed optional runtime config.
+    }
+  }
+
+  foreach ($port in @(9222, 9223, 9224, 9225, 9333)) {
+    Add-CdpCandidate $candidates "http://127.0.0.1:$port"
+  }
+
+  $reachable = [System.Collections.Generic.List[string]]::new()
+  foreach ($candidate in $candidates) {
+    try {
+      $null = Invoke-RestMethod -Uri "$candidate/json/version" -TimeoutSec 2 -ErrorAction Stop
+      if (-not $reachable.Contains($candidate)) { $reachable.Add($candidate) | Out-Null }
+    } catch {
+      continue
+    }
+  }
+
+  if ($reachable.Count -gt 0) { return $reachable.ToArray() }
+  if ($candidates.Count -gt 0) { return @($candidates[0]) }
+  return @("http://127.0.0.1:9223")
+}
+
+$ResolvedCdpUrls = @(Resolve-CdpCandidates -Preferred $CdpUrl)
+if ($CdpUrl) {
+  $ResolvedCdpUrls = @((Resolve-CdpUrl -Preferred $CdpUrl))
+}
 
 $node = Get-Command node -ErrorAction SilentlyContinue
 if (-not $node) { throw "node.exe was not found on PATH." }
@@ -97,26 +140,64 @@ if (-not (Test-Path $packageDir)) {
 $oldNodePath = $env:NODE_PATH
 $env:NODE_PATH = if ($oldNodePath) { "$nodeModules;$oldNodePath" } else { $nodeModules }
 
-$nodeArgs = @(
-  $script,
-  "--mode", $Mode,
-  "--cdp-url", $ResolvedCdpUrl,
-  "--limit", "$Limit",
-  "--type", $Type,
-  "--sort", $Sort,
-  "--max-content", "$MaxContent",
-  "--timeout-ms", "$TimeoutMs"
-)
+function New-NodeArgs {
+  param([string]$CurrentCdpUrl)
 
-if ($Query) { $nodeArgs += @("--query", $Query) }
-if ($Url) { $nodeArgs += @("--url", $Url) }
-if ($OutJson) { $nodeArgs += @("--out-json", $OutJson) }
-if ($OutMarkdown) { $nodeArgs += @("--out-markdown", $OutMarkdown) }
-if ($NewTab) { $nodeArgs += "--new-tab" }
+  $args = @(
+    $script,
+    "--mode", $Mode,
+    "--cdp-url", $CurrentCdpUrl,
+    "--limit", "$Limit",
+    "--type", $Type,
+    "--sort", $Sort,
+    "--max-content", "$MaxContent",
+    "--timeout-ms", "$TimeoutMs"
+  )
+
+  if ($Query) { $args += @("--query", $Query) }
+  if ($Url) { $args += @("--url", $Url) }
+  if ($OutJson) { $args += @("--out-json", $OutJson) }
+  if ($OutMarkdown) { $args += @("--out-markdown", $OutMarkdown) }
+  if ($NewTab) { $args += "--new-tab" }
+  return $args
+}
+
+function Test-BlockedPayload {
+  param([string]$Text)
+
+  try {
+    $payload = $Text | ConvertFrom-Json
+    if ($payload.ok -eq $false -and ($payload.blocker -or $payload.source -eq "blocked")) { return $true }
+    return $false
+  } catch {
+    return $false
+  }
+}
 
 try {
-  & $node.Source @nodeArgs
-  exit $LASTEXITCODE
+  $lastOutput = ""
+  $lastExitCode = 1
+  for ($index = 0; $index -lt $ResolvedCdpUrls.Count; $index += 1) {
+    $currentCdpUrl = $ResolvedCdpUrls[$index]
+    $nodeArgs = New-NodeArgs -CurrentCdpUrl $currentCdpUrl
+    $output = & $node.Source @nodeArgs 2>&1
+    $lastExitCode = $LASTEXITCODE
+    $lastOutput = ($output | Out-String).TrimEnd()
+    $blocked = Test-BlockedPayload -Text $lastOutput
+
+    if ($lastExitCode -eq 0 -and -not $blocked) {
+      if ($lastOutput) { Write-Output $lastOutput }
+      exit 0
+    }
+
+    if ($CdpUrl -or -not $blocked -or $index -ge ($ResolvedCdpUrls.Count - 1)) {
+      if ($lastOutput) { Write-Output $lastOutput }
+      exit $lastExitCode
+    }
+  }
+
+  if ($lastOutput) { Write-Output $lastOutput }
+  exit $lastExitCode
 } finally {
   $env:NODE_PATH = $oldNodePath
 }

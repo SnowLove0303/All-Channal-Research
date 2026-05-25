@@ -46,7 +46,9 @@ powershell -ExecutionPolicy Bypass -File "$Zhihu\scripts\zhihu_cdp.ps1" `
 ## Browser And Login Rules
 
 - Use the `chrome-control-suite` skill first when Chrome/CDP readiness is uncertain.
-- Prefer `CHROME_DIDY_CDP_URL` or `CHROME_DIDY_CHROME_PORT`; otherwise the script falls back to `http://127.0.0.1:9222`.
+- Prefer `CHROME_DIDY_CDP_URL` or `CHROME_DIDY_CHROME_PORT`; otherwise the script falls back to common local debug ports `9222`, `9223`, `9224`, `9225`, and `9333`.
+- When the port is uncertain, run `scripts/discover_cdp_ports.ps1` and inspect environment variables, listening ports, `/json/version`, `/json/list`, and Chrome process command lines before concluding the login port is missing.
+- If no explicit `-CdpUrl` is provided, `zhihu_cdp.ps1` may try the next reachable CDP endpoint when the first endpoint returns a logged-out Zhihu wall. Treat `ECONNREFUSED` or `source: "blocked"` as a port/profile problem until the discovery evidence says otherwise.
 - Preserve any existing logged-in Zhihu tab/profile as the source of truth. Probe with `-Mode observe` first when a Zhihu tab is already open, and avoid `-NewTab` unless navigation would disturb the user's current work.
 - Run navigation modes serially when reusing the same existing tab. If multiple Zhihu captures must run at once, pass `-NewTab` so parallel workers do not interrupt each other's `page.goto` calls.
 - Do not launch an ephemeral or fresh Chrome profile for authenticated Zhihu tasks. The active environment may already expose a logged-in session through `http://127.0.0.1:9223`.

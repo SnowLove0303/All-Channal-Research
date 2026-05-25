@@ -18,9 +18,17 @@ CDP URL lookup order:
 - `CHROME_DIDY_CDP_URL`
 - `CHROME_DIDY_CHROME_PORT`
 - Codex local Chrome config, when present
-- common local debug ports: `9223`, `9222`, `9224`, `9333`
+- common local debug ports: `9222`, `9223`, `9224`, `9225`, `9333`
 
-The wrapper probes `/json/version` and uses the first reachable CDP endpoint. This prevents a stale environment variable from making the collector fail when a newer ChromeDidy login-state port is already running.
+The wrapper probes `/json/version` and uses reachable CDP endpoints in priority order. If no explicit `-CdpUrl` is provided and the first reachable endpoint returns a logged-out Zhihu wall, the wrapper tries the next reachable endpoint. This prevents a stale environment variable or an unrelated Chrome automation profile from making the collector fail when a newer ChromeDidy login-state port is already running.
+
+To inspect the current machine state before running extraction:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "$Zhihu\scripts\discover_cdp_ports.ps1"
+```
+
+The helper prints matching environment variables, listening ports from 9000-9999, `/json/version` probe results, Zhihu/Bilibili tabs from `/json/list`, and Chrome process command lines. It does not print cookies.
 
 ## Quick Start
 
@@ -82,6 +90,7 @@ powershell -ExecutionPolicy Bypass -File "$Zhihu\scripts\zhihu_cdp.ps1" `
 ## Agent Rules
 
 - Preserve the logged-in browser profile; do not export or paste cookies.
+- Check `CHROME_DIDY_CDP_URL` first, then `CHROME_DIDY_CHROME_PORT`, then common CDP ports. A visible `zhihu.com` tab is evidence of a candidate profile, but final success is determined by extraction output, not tab presence alone.
 - Use `-Mode observe` first when the user already has the target Zhihu page open.
 - Use `-NewTab` for parallel captures so one run does not navigate another run's tab.
 - Stop and report the blocker if login, phone verification, slider verification, or CAPTCHA appears.
