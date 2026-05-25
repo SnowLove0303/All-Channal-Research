@@ -1,19 +1,21 @@
-# Bilibili All-in-One Skill
+# All-Channal Research Skills
 
-This private repo packages the current local Codex Bilibili skill as a ready-to-run project.
+This private repo packages the current local Codex research skills as a ready-to-run project.
 
-It includes the skill instructions, Bilibili search/download/transcription scripts, Chrome login-state helpers, Juya daily workflow scripts, hot-video report tools, smoke checks, and install scripts.
+It includes the skill instructions, Bilibili search/download/transcription scripts, Zhihu logged-in Chrome/CDP extraction, Chrome login-state helpers, Juya daily workflow scripts, hot-video report tools, unified information-search evidence workflow, smoke checks, and install scripts.
 
 ## What Is Included
 
 - `bilibili-all-in-one-2026-04-18-v2/SKILL.md`: Codex skill entry.
+- `zhihu-search-info/SKILL.md`: Zhihu search and information retrieval skill entry.
+- `information-search-workflow/`: shared Bilibili + Zhihu evidence collection workflow.
 - `bilibili-all-in-one-2026-04-18-v2/quick-ref.md`: quick command reference.
-- `scripts/bilibili-opencli`: Bilibili search, metadata lookup, video/audio download, ASR transcription, and note generation.
-- `scripts/bilibili-expander`: Chrome login-state reuse, cookie bridge, evidence pack, danmaku/subtitle export, content radar, subscriptions, live snapshot, and download backend checks.
-- `scripts/juya-daily`: Juya AI daily lookup, transcription flow, Notion publishing flow.
-- `scripts/notion`: generic markdown/transcript to Notion publisher.
-- `scripts/bilibili-hot-monitor`: hot video report and email report workflow.
-- `scripts/setup.ps1`, `scripts/check_env.ps1`, `scripts/smoke_test.ps1`: install, environment check, and smoke validation.
+- `bilibili-all-in-one-2026-04-18-v2/scripts/bilibili-opencli`: Bilibili search, metadata lookup, video/audio download, ASR transcription, and note generation.
+- `bilibili-all-in-one-2026-04-18-v2/scripts/bilibili-expander`: Chrome login-state reuse, cookie bridge, evidence pack, danmaku/subtitle export, content radar, subscriptions, live snapshot, and download backend checks.
+- `bilibili-all-in-one-2026-04-18-v2/scripts/juya-daily`: Juya AI daily lookup, transcription flow, Notion publishing flow.
+- `bilibili-all-in-one-2026-04-18-v2/scripts/notion`: generic markdown/transcript to Notion publisher.
+- `bilibili-all-in-one-2026-04-18-v2/scripts/bilibili-hot-monitor`: hot video report and email report workflow.
+- `bilibili-all-in-one-2026-04-18-v2/scripts/setup.ps1`, `check_env.ps1`, `smoke_test.ps1`: install, environment check, and smoke validation.
 - `TRANSCRIBE_AND_NOTION.md`: operator and agent runbook for transcription and Notion publishing.
 
 Local login state, generated environment files, caches, and secrets are intentionally not committed.
@@ -88,6 +90,38 @@ $Expander = "$Skill\scripts\bilibili-expander\cli.py"
 Cookie state is written under `.runtime/` and is ignored by Git.
 
 ## Common Commands
+
+Run a unified Bilibili + Zhihu search and keep evidence under `.runtime/`:
+
+```powershell
+node .\information-search-workflow\scripts\collect_sources.mjs `
+  --query "AI Agent daily report" `
+  --limit 10 `
+  --out-dir .\.runtime\information-search\ai-agent-daily
+```
+
+Run Bilibili only:
+
+```powershell
+node .\information-search-workflow\scripts\collect_sources.mjs `
+  --query "AI Agent daily report" `
+  --platforms bilibili `
+  --limit 10
+```
+
+Run Zhihu search through the logged-in ChromeDidy/CDP profile:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\zhihu-search-info\scripts\zhihu_cdp.ps1 `
+  -Mode search `
+  -Query "AI Agent daily report" `
+  -Type all `
+  -Limit 8 `
+  -OutJson .\.runtime\zhihu\search.json `
+  -OutMarkdown .\.runtime\zhihu\search.md
+```
+
+`zhihu_cdp.ps1` auto-discovers CDP in this order: explicit `-CdpUrl`, `CHROME_DIDY_CDP_URL`, `CHROME_DIDY_CHROME_PORT`, local Codex Chrome config, then common local debug ports `9223`, `9222`, `9224`, and `9333`.
 
 Find a specific video without downloading:
 
